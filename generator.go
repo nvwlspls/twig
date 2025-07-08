@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -56,6 +56,19 @@ func (sg *SiteGenerator) Build() error {
 		}
 	}
 
+	// Sort pages by date for consistent ordering
+	// This ensures a predictable order in the sidebar
+	sort.Slice(sg.pages, func(i, j int) bool {
+		return sg.pages[i].Date.After(sg.pages[j].Date)
+	})
+
+	// Regenerate all HTML files with the complete sorted page list
+	for _, page := range sg.pages {
+		if err := sg.regenerateHTMLFile(page); err != nil {
+			log.Printf("Warning: failed to regenerate %s: %v", page.URL, err)
+		}
+	}
+
 	// Generate index page
 	if err := sg.generateIndex(); err != nil {
 		return fmt.Errorf("failed to generate index: %w", err)
@@ -86,7 +99,7 @@ func (sg *SiteGenerator) findMarkdownFiles() ([]string, error) {
 // processFile converts a single markdown file to HTML
 func (sg *SiteGenerator) processFile(filePath string) error {
 	// Read markdown content
-	content, err := ioutil.ReadFile(filePath)
+	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
 	}
@@ -97,12 +110,14 @@ func (sg *SiteGenerator) processFile(filePath string) error {
 	// Extract metadata and content
 	page := sg.extractPageInfo(filePath, content, html)
 
+	// Add the page to pages collection before generating HTML
+	sg.pages = append(sg.pages, page)
+
 	// Generate HTML file
 	if err := sg.generateHTMLFile(page); err != nil {
 		return err
 	}
 
-	sg.pages = append(sg.pages, page)
 	return nil
 }
 
@@ -140,6 +155,15 @@ func (sg *SiteGenerator) extractPageInfo(filePath string, markdownContent, htmlC
 
 // generateHTMLFile creates an HTML file for a page
 func (sg *SiteGenerator) generateHTMLFile(page Page) error {
+	// Create output file path
+	outputPath := filepath.Join(sg.outputDir, page.URL)
+	outputDir := filepath.Dir(outputPath)
+
+	// Make sure the output directory exists
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		return err
+	}
+
 	// Read template
 	tmpl, err := template.ParseFiles(sg.templateFile)
 	if err != nil {
@@ -147,12 +171,6 @@ func (sg *SiteGenerator) generateHTMLFile(page Page) error {
 	}
 
 	// Create output file
-	outputPath := filepath.Join(sg.outputDir, page.URL)
-	outputDir := filepath.Dir(outputPath)
-	if err := os.MkdirAll(outputDir, 0755); err != nil {
-		return err
-	}
-
 	file, err := os.Create(outputPath)
 	if err != nil {
 		return err
@@ -170,6 +188,11 @@ func (sg *SiteGenerator) generateHTMLFile(page Page) error {
 
 	// Execute template
 	return tmpl.Execute(file, templateData)
+}
+
+// regenerateHTMLFile is an alias for generateHTMLFile to maintain compatibility with the updated Build function
+func (sg *SiteGenerator) regenerateHTMLFile(page Page) error {
+	return sg.generateHTMLFile(page)
 }
 
 // generateIndex creates an index page listing all pages
