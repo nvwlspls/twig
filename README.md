@@ -12,6 +12,43 @@ A simple, fast static site generator written in Go that converts markdown files 
 
 ## Installation
 
+### Quick Install
+
+**Linux/macOS:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/yourusername/twig/main/scripts/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/yourusername/twig/main/scripts/install.ps1" -UseBasicParsing).Content
+```
+
+### Manual Installation
+
+1. **Download from [GitHub Releases](https://github.com/yourusername/twig/releases)**
+2. **Extract the archive for your platform**
+3. **Add to PATH** (see [INSTALL.md](INSTALL.md) for detailed instructions)
+
+### Package Managers
+
+**Homebrew (macOS):**
+```bash
+brew install yourusername/twig/twig
+```
+
+**Chocolatey (Windows):**
+```powershell
+choco install twig
+```
+
+**Go Install (if Go is installed):**
+```bash
+go install github.com/yourusername/twig@latest
+```
+
+### From Source
+
 1. Clone this repository:
 ```bash
 git clone <repository-url>
@@ -124,6 +161,67 @@ Then use it like:
 ```bash
 ./twig --source content --output public
 ```
+
+### Version Information
+
+Check the version of your twig binary:
+
+```bash
+./twig --version
+```
+
+## Release Management
+
+This project uses automated versioning and releases via GitHub Actions.
+
+### Automatic Versioning
+
+The project supports automatic version bumping based on conventional commits:
+
+- **Major version** (`1.0.0` → `2.0.0`): Breaking changes (`BREAKING CHANGE:` or `!:`)
+- **Minor version** (`1.0.0` → `1.1.0`): New features (`feat:`)
+- **Patch version** (`1.0.0` → `1.0.1`): Bug fixes and other changes
+
+### Manual Version Bumping
+
+Use the local script to bump versions:
+
+```bash
+# Bump patch version (default)
+./scripts/bump-version.sh
+
+# Bump minor version
+./scripts/bump-version.sh minor
+
+# Bump major version
+./scripts/bump-version.sh major
+```
+
+### Creating Releases
+
+#### Option 1: Manual Release
+1. Bump version locally: `./scripts/bump-version.sh minor`
+2. Commit changes: `git add VERSION && git commit -m "chore: bump version to 1.1.0"`
+3. Create tag: `git tag -a "v1.1.0" -m "Release v1.1.0"`
+4. Push: `git push origin main --tags`
+
+#### Option 2: GitHub Actions Manual Trigger
+1. Go to Actions → "Version Bump" workflow
+2. Click "Run workflow"
+3. Select bump type and run
+
+#### Option 3: Automatic on Push to Main
+- Push conventional commits to main branch
+- GitHub Actions will automatically bump version and create releases
+
+### Release Artifacts
+
+Each release includes binaries for:
+- **Windows**: amd64, 386
+- **Linux**: amd64, 386, arm64  
+- **macOS**: amd64, arm64
+
+Download from: [GitHub Releases](https://github.com/yourusername/twig/releases)
 
 ## Example Output
 

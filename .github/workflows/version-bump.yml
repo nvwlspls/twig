@@ -1,0 +1,134 @@
+name: Version Bump
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+
+jobs:
+  version-bump:
+    name: Bump Version
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    outputs:
+      new_version: ${{ steps.bump.outputs.new_version }}
+      should_release: ${{ steps.bump.outputs.should_release }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install conventional-changelog
+        run: npm install -g conventional-changelog-cli
+
+      - name: Bump version
+        id: bump
+        run: |
+          # Read current version
+          CURRENT_VERSION=$(cat VERSION)
+          echo "Current version: $CURRENT_VERSION"
+          
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            # Manual bump
+            BUMP_TYPE="${{ github.event.inputs.bump_type }}"
+            echo "Manual bump type: $BUMP_TYPE"
+          else
+            # Auto bump based on commits since last tag
+            LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+            COMMITS=$(git log --oneline $LAST_TAG..HEAD)
+            
+            if echo "$COMMITS" | grep -q "BREAKING CHANGE\|!:"; then
+              BUMP_TYPE="major"
+            elif echo "$COMMITS" | grep -q "feat:"; then
+              BUMP_TYPE="minor"
+            else
+              BUMP_TYPE="patch"
+            fi
+            echo "Auto bump type: $BUMP_TYPE"
+          fi
+          
+          # Bump version
+          IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
+          
+          case $BUMP_TYPE in
+            major)
+              NEW_MAJOR=$((major + 1))
+              NEW_VERSION="$NEW_MAJOR.0.0"
+              ;;
+            minor)
+              NEW_MINOR=$((minor + 1))
+              NEW_VERSION="$major.$NEW_MINOR.0"
+              ;;
+            patch)
+              NEW_PATCH=$((patch + 1))
+              NEW_VERSION="$major.$minor.$NEW_PATCH"
+              ;;
+          esac
+          
+          echo "New version: $NEW_VERSION"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          
+          # Check if we should create a release
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          else
+            # Only auto-release if there are meaningful commits
+            if [ "$BUMP_TYPE" != "patch" ] || [ -n "$(echo "$COMMITS" | grep -v '^[a-f0-9]* chore:')" ]; then
+              echo "should_release=true" >> $GITHUB_OUTPUT
+            else
+              echo "should_release=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Update VERSION file
+        run: echo "${{ steps.bump.outputs.new_version }}" > VERSION
+
+      - name: Update go.mod version
+        run: |
+          # Update go.mod with new version if needed
+          sed -i "s/go 1\.[0-9]\+/go 1.21/" go.mod
+
+      - name: Commit and push changes
+        if: steps.bump.outputs.should_release == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add VERSION go.mod
+          git commit -m "chore: bump version to ${{ steps.bump.outputs.new_version }}"
+          git push origin main
+
+      - name: Create and push tag
+        if: steps.bump.outputs.should_release == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -a "v${{ steps.bump.outputs.new_version }}" -m "Release v${{ steps.bump.outputs.new_version }}"
+          git push origin "v${{ steps.bump.outputs.new_version }}"
+
+      - name: Update VERSION file only
+        if: steps.bump.outputs.should_release == 'false'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add VERSION
+          git commit -m "chore: bump version to ${{ steps.bump.outputs.new_version }}"
+          git push origin main 

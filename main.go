@@ -8,13 +8,22 @@ import (
 	"os"
 )
 
+// Version will be set by the linker during build
+var version = "dev"
+
 func main() {
 	var sourceDir = flag.String("source", "content", "Source directory containing markdown files")
 	var outputDir = flag.String("output", "public", "Output directory for generated HTML files")
 	var templateFile = flag.String("template", "template.html", "HTML template file")
 	var serve = flag.Bool("serve", false, "Serve the output directory locally after building")
 	var port = flag.Int("port", 8080, "Port to serve the site on (used with --serve)")
+	var showVersion = flag.Bool("version", false, "Show version information")
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Printf("twig version %s\n", version)
+		os.Exit(0)
+	}
 
 	// Create output directory if it doesn't exist
 	if err := os.MkdirAll(*outputDir, 0755); err != nil {

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>twig</id>
+    <version>1.0.0</version>
+    <title>Twig - Static Site Generator</title>
+    <authors>Your Name</authors>
+    <projectUrl>https://github.com/yourusername/twig</projectUrl>
+    <licenseUrl>https://github.com/yourusername/twig/blob/main/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <projectSourceUrl>https://github.com/yourusername/twig</projectSourceUrl>
+    <docsUrl>https://github.com/yourusername/twig#readme</docsUrl>
+    <bugTrackerUrl>https://github.com/yourusername/twig/issues</bugTrackerUrl>
+    <tags>twig static-site-generator markdown html go</tags>
+    <summary>A simple, fast static site generator written in Go that converts markdown files to HTML.</summary>
+    <description>
+## Twig - Minimal Static Site Generator
+
+A simple, fast static site generator written in Go that converts markdown files to HTML.
+
+### Features
+- **Markdown Support**: Convert `.md` files to HTML with full markdown syntax
+- **Clean Templates**: Beautiful, responsive HTML templates
+- **Auto-generated Index**: Automatic index page with all your content
+- **Simple CLI**: Easy-to-use command line interface
+- **Customizable**: Flexible template and output options
+
+### Usage
+```bash
+# Basic usage
+twig
+
+# Custom directories
+twig --source blog --output docs
+
+# Serve locally
+twig --serve
+
+# Check version
+twig --version
+```
+
+### Documentation
+For more information, visit: https://github.com/yourusername/twig
+    </description>
+    <releaseNotes>https://github.com/yourusername/twig/releases</releaseNotes>
+    <copyright>MIT License</copyright>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package> 
